@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 use App\Http\Resources\ProductResource;
 use App\Models\Product;
+use App\Models\Image;
 use Illuminate\Http\Request;
 use Illuminate\support\str;
 class ProductController extends Controller
@@ -32,13 +33,20 @@ class ProductController extends Controller
         $request->validate([
             'name' => 'required',
             'price' => 'required',
+            'image' => 'required'
         ]);
+
         $product = Product::create([
             'name' => $request['name'],
             'slug' => Str::slug($request['name'], "-"),
             'description' => $request['description'],
             'price' => $request['price']
         ]);
+
+        foreach($request->file('image') as $img) {
+            $path = $img->store('products');
+            Image::create(['path' => $path, 'product_id' => $product->id]);
+        }
         return new ProductResource($product);
     }
 
@@ -50,7 +58,7 @@ class ProductController extends Controller
      */
     public function show($id)
     {
-        return new ProductResource(Product::find($id));
+        return new ProductResource(Product::whereId($id)->with('images')->first());
     }
 
     /**
